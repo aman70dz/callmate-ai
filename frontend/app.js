@@ -1,4 +1,6 @@
-const API = 'http://localhost:5000';
+const API = (window.location.protocol === 'file:' || (window.location.port && !['5000', '5001'].includes(window.location.port)))
+  ? 'http://localhost:5001'
+  : '';
 const form = document.querySelector('#callForm');
 const message = document.querySelector('#formMessage');
 const taskList = document.querySelector('#taskList');
