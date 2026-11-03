@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CallMate AI — Personal calling assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-icon">C</div><div><b>CallMate AI</b><small>PERSONAL ASSISTANT</small></div></div>
+      <div class="nav-label">WORKSPACE</div>
+      <a class="nav active" href="#dashboard">▦ <span>Dashboard</span></a>
+      <a class="nav" href="#new-call">＋ <span>New call</span></a>
+      <a class="nav" href="#activity">◷ <span>Call activity</span></a>
+      <div class="side-note"><div class="status-dot" id="sideStatusDot"></div><div><b id="sideNoteTitle">Development mode</b><small id="sideNoteSub">No real calls are placed</small></div></div>
+      <div class="profile"><div class="avatar">A</div><div><b>Personal workspace</b><small>Local preview</small></div></div>
+    </aside>
+    <main class="main" id="dashboard">
+      <header class="topbar"><div><span class="eyebrow">YOUR CALLING WORKSPACE</span><h1>Good evening<span class="period">.</span></h1><p>Give your assistant an instruction. It handles the call workflow.</p></div><div class="top-actions"><span class="mode-pill" id="modePill"><i id="modeDot"></i> <span id="modeText">SAFE DEMO MODE</span></span></div></header>
+      <section class="stats">
+        <article class="stat-card"><span class="stat-label">TOTAL TASKS</span><strong id="totalCount">0</strong><span class="stat-foot">All created call tasks</span></article>
+        <article class="stat-card"><span class="stat-label">COMPLETED</span><strong id="completedCount">0</strong><span class="stat-foot">Conversation workflow finished</span></article>
+        <article class="stat-card"><span class="stat-label">RETRY QUEUED</span><strong id="retryCount">0</strong><span class="stat-foot">Waiting for second attempt</span></article>
+        <article class="stat-card"><span class="stat-label">NEEDS ATTENTION</span><strong id="failedCount">0</strong><span class="stat-foot">Failed or unanswered</span></article>
+      </section>
+      <section class="content-grid">
+        <article class="panel create-panel" id="new-call">
+          <div class="panel-heading"><div><span class="eyebrow">NEW TASK</span><h2>Who should I call?</h2><p>Describe the outcome you want in plain language.</p></div><div class="spark">✳</div></div>
+          <form id="callForm">
+            <div class="form-row"><label>Recipient name<input id="contactName" placeholder="e.g. Rahul Sharma" maxlength="100" required></label><label>Mobile number<input id="phoneNumber" type="tel" placeholder="+91 98765 43210" required></label></div>
+            <label>What should CallMate do?<textarea id="instruction" rows="4" maxlength="2000" placeholder="Call Rahul and tell him tomorrow's meeting has moved to 10 AM. If he asks anything you don't know, tell him I'll follow up." required></textarea></label>
+            <div class="ai-tools"><button id="prepareAiBtn" class="secondary-btn" type="button">✦ Prepare with Gemini AI</button><span id="aiStatus" role="status">AI will prepare a call brief; it will not place a call.</span></div>
+            <div id="aiPlan" class="ai-plan" hidden></div>
+            <div class="form-row"><label>Conversation language<select id="language"><option value="hi">Hindi</option><option value="en">English</option></select></label><div class="retry-info"><span>↻</span><div><b>Retry policy</b><small>One retry after 10 minutes · 2 attempts maximum</small></div></div></div>
+            <label class="consent"><input id="consent" type="checkbox" required><span>I confirm the recipient has agreed to receive this call, and this is a lawful, non-spam personal call.</span></label>
+            <button class="primary-btn" type="submit"><span>＋</span> Create call task <b>→</b></button>
+            <div id="formMessage" class="form-message" role="status"></div>
+          </form>
+        </article>
+        <article class="panel activity-panel" id="activity">
+          <div class="panel-heading compact"><div><span class="eyebrow">OVERVIEW</span><h2>Recent activity</h2></div><button id="refreshBtn" class="icon-btn" title="Refresh">↻</button></div>
+          <div id="taskList" class="task-list"><div class="empty-state"><div class="empty-icon">◷</div><b>No call tasks yet</b><span>Create your first task to see it here.</span></div></div>
+          <div class="activity-footer"><span class="live-dot"></span> Updates when you refresh the dashboard</div>
+        </article>
+      </section>
+      <footer>CALLMATE AI <span>•</span> Personal voice assistant <span>•</span> Safe development preview</footer>
+    </main>
+  </div>
+  <div id="simModalContainer"></div>
+  <script src="app.js"></script>
+</body></html>
