@@ -9,6 +9,7 @@ import { requireUser } from './middleware/auth.js';
 import callRoutes from './routes/callRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import assistantRoutes from './routes/assistantRoutes.js';
+import publicCallRoutes from './routes/publicCallRoutes.js';
 import { attachVoiceBridge } from './websocket/voiceBridge.js';
 
 const app = express();
@@ -27,6 +28,8 @@ app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use(express.static(path.resolve('frontend')));
 app.use('/api', rateLimit({ windowMs: 60_000, limit: 30, standardHeaders: 'draft-8', legacyHeaders: false }));
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'callmate-ai', mode: env.DATA_MODE, liveCallsEnabled: env.ENABLE_LIVE_CALLS === 'true' }));
+app.get('/call/:id', (_req, res) => res.sendFile(path.resolve('frontend/call.html')));
+app.use('/api/public/calls', publicCallRoutes);
 app.use('/webhooks', webhookRoutes);
 app.use('/api/calls', requireUser, callRoutes);
 app.use('/api/assistant', requireUser, assistantRoutes);

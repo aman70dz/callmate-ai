@@ -85,6 +85,7 @@ async function refresh() {
           <span class="task-date">${new Date(t.created_at).toLocaleString()}</span>
           <div class="task-actions-right">
             ${['pending', 'retry_scheduled', 'no_answer', 'failed'].includes(t.status) ? `
+              <button class="whatsapp-btn" data-whatsapp="${escapeHtml(t.id)}">📲 WhatsApp Call</button>
               <button class="dial-btn" data-dial="${escapeHtml(t.id)}">📱 Call Phone</button>
               <button class="simulate-btn" data-simulate="${escapeHtml(t.id)}">💬 Simulate</button>
               <button class="cancel-btn" data-cancel="${escapeHtml(t.id)}">Cancel</button>
@@ -343,6 +344,20 @@ form.addEventListener('submit', async e => {
 });
 
 taskList.addEventListener('click', async e => {
+  const whatsappId = e.target.dataset.whatsapp;
+  if (whatsappId) {
+    const task = loadedTasks.find(t => t.id === whatsappId);
+    if (!task) return;
+    const callUrl = `${window.location.origin}/call/${task.id}`;
+    const cleanPhone = task.phone_number.replace(/[^0-9]/g, '');
+    const greetingText = task.language === 'hi'
+      ? `नमस्ते ${task.contact_name}! कॉलमेट एआई की तरफ़ से आपके लिए एक आवश्यक वॉइस कॉल है ("${task.instruction}")।\n\n👉 कॉल उठाने के लिए यहाँ क्लिक करें:\n${callUrl}`
+      : `Hello ${task.contact_name}! You have an incoming AI voice call from CallMate regarding: "${task.instruction}".\n\n👉 Tap here to answer the voice call:\n${callUrl}`;
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(greetingText)}`;
+    window.open(waUrl, '_blank');
+    return;
+  }
+
   const dialId = e.target.dataset.dial;
   if (dialId) {
     const task = loadedTasks.find(t => t.id === dialId);

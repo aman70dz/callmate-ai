@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CallMate AI — Voice Call</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0b141a;
+      color: #e9edef;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .top-bar {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: #8696a0;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .lock-icon { font-size: 12px; }
+
+    .center-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 0 20px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      margin-bottom: 24px;
+    }
+    .avatar-ring {
+      position: absolute;
+      inset: -12px;
+      border-radius: 50%;
+      border: 2px solid rgba(37, 211, 102, 0.4);
+      animation: pulse-ring 2s infinite ease-out;
+    }
+    .avatar {
+      width: 108px;
+      height: 108px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #128c7e 0%, #25d366 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      box-shadow: 0 10px 30px rgba(18, 140, 126, 0.35);
+      border: 3px solid #111b21;
+      position: relative;
+      z-index: 2;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 0.3; }
+      100% { transform: scale(1.3); opacity: 0; }
+    }
+
+    .caller-name {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+    .caller-subtitle {
+      font-size: 14px;
+      color: #8696a0;
+      margin-bottom: 12px;
+    }
+    .call-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #25d366;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #25d366;
+      animation: blink 1.2s infinite ease-in-out;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+    /* Visualizer */
+    .visualizer {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 24px;
+      margin: 16px 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .visualizer.active { opacity: 1; }
+    .v-bar {
+      width: 4px;
+      height: 100%;
+      background: #25d366;
+      border-radius: 2px;
+      animation: sound-wave 0.8s infinite ease-in-out alternate;
+    }
+    .v-bar:nth-child(2) { animation-delay: 0.15s; }
+    .v-bar:nth-child(3) { animation-delay: 0.3s; }
+    .v-bar:nth-child(4) { animation-delay: 0.45s; }
+    .v-bar:nth-child(5) { animation-delay: 0.2s; }
+    @keyframes sound-wave {
+      0% { transform: scaleY(0.2); }
+      100% { transform: scaleY(1); }
+    }
+
+    /* Transcript Box */
+    .transcript-box {
+      width: 100%;
+      max-width: 380px;
+      max-height: 160px;
+      overflow-y: auto;
+      background: rgba(17, 27, 33, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+      display: none;
+    }
+    .transcript-box.visible { display: flex; }
+    .t-msg {
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.4;
+      max-width: 88%;
+      word-wrap: break-word;
+    }
+    .t-msg.ai {
+      background: #202c33;
+      color: #e9edef;
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+    }
+    .t-msg.user {
+      background: #005c4b;
+      color: #e9edef;
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+    }
+    .t-speaker {
+      font-size: 10px;
+      font-weight: 700;
+      color: #8696a0;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .t-msg.user .t-speaker { color: #53bdeb; }
+
+    /* Bottom Controls */
+    .bottom-bar {
+      padding: 24px 20px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .incoming-actions {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      max-width: 300px;
+    }
+    .action-btn-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .action-btn-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #8696a0;
+    }
+
+    .call-btn {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 28px;
+      color: #ffffff;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .call-btn:active { transform: scale(0.92); }
+
+    .accept-btn {
+      background: #25d366;
+      animation: pulse-accept 1.6s infinite;
+    }
+    @keyframes pulse-accept {
+      0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+      70% { box-shadow: 0 0 0 16px rgba(37, 211, 102, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+    }
+    .decline-btn {
+      background: #ea4335;
+    }
+
+    .connected-actions {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      width: 100%;
+    }
+    .connected-actions.visible { display: flex; }
+
+    .control-pill {
+      background: #202c33;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e9edef;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .control-pill.active {
+      background: #00a884;
+      color: #fff;
+    }
+
+    /* Manual Speech Input Fallback */
+    .manual-input-row {
+      display: none;
+      width: 100%;
+      max-width: 380px;
+      margin-top: 8px;
+      gap: 8px;
+    }
+    .manual-input-row.visible { display: flex; }
+    .manual-input-row input {
+      flex: 1;
+      background: #202c33;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 10px 16px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+    .manual-input-row button {
+      background: #25d366;
+      border: none;
+      color: #111b21;
+      font-weight: 700;
+      padding: 0 16px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <span class="lock-icon">🔒</span> End-to-End AI Voice Call
+  </div>
+
+  <div class="center-stage">
+    <div class="avatar-wrapper">
+      <div class="avatar-ring" id="avatarRing"></div>
+      <div class="avatar">🤖</div>
+    </div>
+
+    <div class="caller-name" id="callerName">CallMate AI</div>
+    <div class="caller-subtitle" id="callerSubtitle">Calling on behalf of Aman</div>
+
+    <div class="call-status">
+      <span class="pulse-dot" id="pulseDot"></span>
+      <span id="callStatusText">Incoming Voice Call…</span>
+    </div>
+
+    <div class="visualizer" id="visualizer">
+      <div class="v-bar"></div>
+      <div class="v-bar"></div>
+      <div class="v-bar"></div>
+      <div class="v-bar"></div>
+      <div class="v-bar"></div>
+    </div>
+
+    <div class="transcript-box" id="transcriptBox">
+      <!-- Speech bubbles will appear here -->
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <!-- Incoming Controls -->
+    <div class="incoming-actions" id="incomingActions">
+      <div class="action-btn-wrapper">
+        <button class="call-btn decline-btn" id="declineBtn" title="Decline">✕</button>
+        <span class="action-btn-label">Decline</span>
+      </div>
+      <div class="action-btn-wrapper">
+        <button class="call-btn accept-btn" id="acceptBtn" title="Answer">📞</button>
+        <span class="action-btn-label">Answer</span>
+      </div>
+    </div>
+
+    <!-- Connected In-Call Controls -->
+    <div class="connected-actions" id="connectedActions">
+      <button class="control-pill" id="micBtn" title="Mute Mic">🎤</button>
+      <button class="call-btn decline-btn" id="hangupBtn" title="End Call">✕</button>
+      <button class="control-pill active" id="speakerBtn" title="Speaker Voice">🔊</button>
+    </div>
+
+    <!-- Manual fallback input -->
+    <form class="manual-input-row" id="manualInputRow">
+      <input type="text" id="manualInput" placeholder="Speak or type your answer…" autocomplete="off">
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script>
+    // Parse taskId from URL /call/:id
+    const pathParts = window.location.pathname.split('/');
+    const taskId = pathParts[pathParts.length - 1];
+
+    let conversationId = null;
+    let callTimerInterval = null;
+    let durationSec = 0;
+    let isConnected = false;
+    let recognition = null;
+    let isSpeaking = false;
+    let audioContext = null;
+    let ringInterval = null;
+    let taskLanguage = 'en';
+
+    const statusText = document.getElementById('callStatusText');
+    const callerNameEl = document.getElementById('callerName');
+    const callerSubtitleEl = document.getElementById('callerSubtitle');
+    const visualizer = document.getElementById('visualizer');
+    const transcriptBox = document.getElementById('transcriptBox');
+    const incomingActions = document.getElementById('incomingActions');
+    const connectedActions = document.getElementById('connectedActions');
+    const manualInputRow = document.getElementById('manualInputRow');
+    const manualInput = document.getElementById('manualInput');
+    const avatarRing = document.getElementById('avatarRing');
+    const micBtn = document.getElementById('micBtn');
+
+    // 1. Play realistic phone ringtone via Web Audio API
+    function startRinging() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        audioContext = new AudioCtx();
+
+        function playRingBurst() {
+          if (!audioContext || isConnected) return;
+          if (audioContext.state === 'suspended') audioContext.resume();
+
+          const osc1 = audioContext.createOscillator();
+          const osc2 = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(440, audioContext.currentTime); // 440 Hz
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(480, audioContext.currentTime); // 480 Hz
+
+          gain.gain.setValueAtTime(0.08, audioContext.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.6);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(audioContext.destination);
+
+          osc1.start();
+          osc2.start();
+          osc1.stop(audioContext.currentTime + 1.6);
+        }
+
+        playRingBurst();
+        ringInterval = setInterval(playRingBurst, 3000);
+      } catch (e) {
+        console.warn('Audio ringtone error:', e);
+      }
+    }
+
+    function stopRinging() {
+      if (ringInterval) clearInterval(ringInterval);
+      if (audioContext) {
+        audioContext.close().catch(() => {});
+        audioContext = null;
+      }
+    }
+
+    // 2. Fetch call details
+    async function loadCallDetails() {
+      try {
+        const res = await fetch(`/api/public/calls/${taskId}`);
+        if (!res.ok) throw new Error('Task not found');
+        const data = await res.json();
+        taskLanguage = data.language || 'en';
+        callerSubtitleEl.textContent = `Call for ${data.contactName}`;
+        startRinging();
+      } catch (err) {
+        statusText.textContent = 'Call Expired or Unavailable';
+        statusText.style.color = '#ea4335';
+      }
+    }
+
+    // 3. Answer Call
+    async function answerCall() {
+      stopRinging();
+      isConnected = true;
+      incomingActions.style.display = 'none';
+      connectedActions.classList.add('visible');
+      transcriptBox.classList.add('visible');
+      manualInputRow.classList.add('visible');
+      avatarRing.style.display = 'none';
+
+      statusText.textContent = 'Connecting…';
+
+      // Start timer
+      callTimerInterval = setInterval(() => {
+        durationSec++;
+        const mins = String(Math.floor(durationSec / 60)).padStart(2, '0');
+        const secs = String(durationSec % 60).padStart(2, '0');
+        statusText.textContent = `${mins}:${secs}`;
+      }, 1000);
+
+      try {
+        const res = await fetch(`/api/public/calls/${taskId}/start`, { method: 'POST' });
+        const data = await res.json();
+        conversationId = data.conversationId;
+        taskLanguage = data.language || taskLanguage;
+
+        addBubble('ai', data.openingMessage);
+        speakAiVoice(data.openingMessage, () => {
+          startSpeechRecognition();
+        });
+      } catch (err) {
+        addBubble('ai', 'Connection failed: ' + err.message);
+      }
+    }
+
+    // 4. Text-to-Speech
+    function speakAiVoice(text, onComplete) {
+      if (!('speechSynthesis' in window)) {
+        if (onComplete) onComplete();
+        return;
+      }
+      window.speechSynthesis.cancel();
+      isSpeaking = true;
+      visualizer.classList.add('active');
+
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = taskLanguage === 'hi' ? 'hi-IN' : 'en-US';
+      utter.rate = 1.0;
+
+      utter.onend = () => {
+        isSpeaking = false;
+        visualizer.classList.remove('active');
+        if (onComplete) onComplete();
+      };
+      utter.onerror = () => {
+        isSpeaking = false;
+        visualizer.classList.remove('active');
+        if (onComplete) onComplete();
+      };
+
+      window.speechSynthesis.speak(utter);
+    }
+
+    // 5. Speech-to-Text (Microphone listening)
+    function startSpeechRecognition() {
+      if (!isConnected || isSpeaking) return;
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) return;
+
+      try {
+        if (recognition) recognition.abort();
+        recognition = new SpeechRec();
+        recognition.lang = taskLanguage === 'hi' ? 'hi-IN' : 'en-IN';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+          micBtn.classList.add('active');
+        };
+
+        recognition.onresult = async (e) => {
+          const userText = e.results[0][0].transcript;
+          if (userText && userText.trim()) {
+            handleUserSpeech(userText.trim());
+          }
+        };
+
+        recognition.onend = () => {
+          micBtn.classList.remove('active');
+          // If still connected and not speaking, restart listening
+          if (isConnected && !isSpeaking) {
+            setTimeout(startSpeechRecognition, 800);
+          }
+        };
+
+        recognition.onerror = (e) => {
+          micBtn.classList.remove('active');
+        };
+
+        recognition.start();
+      } catch (err) {
+        console.warn('Recognition start error:', err);
+      }
+    }
+
+    // 6. Handle user speech
+    async function handleUserSpeech(text) {
+      if (isSpeaking) return;
+      if (recognition) recognition.stop();
+
+      addBubble('user', text);
+      visualizer.classList.add('active');
+
+      try {
+        const res = await fetch(`/api/public/calls/${taskId}/reply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversationId, userSpeech: text })
+        });
+        const data = await res.json();
+        visualizer.classList.remove('active');
+
+        addBubble('ai', data.reply);
+
+        if (data.endCall) {
+          speakAiVoice(data.reply, () => {
+            endCall();
+          });
+        } else {
+          speakAiVoice(data.reply, () => {
+            startSpeechRecognition();
+          });
+        }
+      } catch (err) {
+        visualizer.classList.remove('active');
+        addBubble('ai', 'Error generating response: ' + err.message);
+      }
+    }
+
+    // 7. Add bubble to transcript
+    function addBubble(speaker, text) {
+      const bubble = document.createElement('div');
+      bubble.className = `t-msg ${speaker}`;
+      bubble.innerHTML = `<div class="t-speaker">${speaker === 'ai' ? 'CallMate AI' : 'You'}</div>${escapeHtml(text)}`;
+      transcriptBox.appendChild(bubble);
+      transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+    }
+
+    // 8. End Call
+    async function endCall() {
+      stopRinging();
+      isConnected = false;
+      if (callTimerInterval) clearInterval(callTimerInterval);
+      if (recognition) recognition.abort();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+      statusText.textContent = 'Call Ended';
+      statusText.style.color = '#8696a0';
+      visualizer.classList.remove('active');
+      connectedActions.classList.remove('visible');
+      manualInputRow.classList.remove('visible');
+
+      try {
+        await fetch(`/api/public/calls/${taskId}/end`, { method: 'POST' });
+      } catch (e) {}
+    }
+
+    // Event Listeners
+    document.getElementById('acceptBtn').addEventListener('click', answerCall);
+    document.getElementById('declineBtn').addEventListener('click', endCall);
+    document.getElementById('hangupBtn').addEventListener('click', endCall);
+
+    document.getElementById('manualInputRow').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const txt = manualInput.value.trim();
+      if (txt) {
+        manualInput.value = '';
+        handleUserSpeech(txt);
+      }
+    });
+
+    document.getElementById('micBtn').addEventListener('click', () => {
+      if (recognition) {
+        recognition.abort();
+        micBtn.classList.remove('active');
+      } else {
+        startSpeechRecognition();
+      }
+    });
+
+    // Start
+    loadCallDetails();
+  </script>
+</body>
+</html>

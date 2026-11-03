@@ -9,3 +9,4 @@ export async function placeOutboundCall({ phoneNumber, taskId }) {
   }
   return await placeExotelCall({ phoneNumber, taskId });
 }
+

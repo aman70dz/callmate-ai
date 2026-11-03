@@ -9,6 +9,23 @@
   align-items: center;
   gap: 8px;
 }
+.whatsapp-btn {
+  border: 1px solid #25d366;
+  background: #075e54;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font: 700 11px 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+.whatsapp-btn:hover {
+  background: #128c7e;
+  box-shadow: 0 4px 10px rgba(37, 211, 102, 0.35);
+}
 .dial-btn {
   border: 1px solid #059669;
   background: #ecfdf5;
