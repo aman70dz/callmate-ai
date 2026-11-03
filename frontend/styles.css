@@ -9,6 +9,28 @@
   align-items: center;
   gap: 8px;
 }
+.dial-btn {
+  border: 1px solid #059669;
+  background: #ecfdf5;
+  color: #047857;
+  border-radius: 8px;
+  padding: 5px 11px;
+  font: 700 11px 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+.dial-btn:hover {
+  background: #059669;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25);
+}
+.dial-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .simulate-btn {
   border: 1px solid #c9d2fc;
   background: #f0f3ff;

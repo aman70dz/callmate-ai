@@ -1,7 +1,7 @@
 import { Worker } from 'bullmq';
 import { createRedisConnection } from '../config/redis.js';
 import { repository } from '../services/repository.js';
-import { placeExotelCall } from '../services/exotelService.js';
+import { placeOutboundCall } from '../services/telephonyService.js';
 import { env } from '../config/env.js';
 
 const connection = createRedisConnection();
@@ -15,7 +15,7 @@ const worker = new Worker('callmate-calls', async job => {
   const attempt = await repository.createAttempt(taskId, attemptNumber);
   await repository.updateTask(taskId, { status: 'calling', attempts_made: attemptNumber });
   try {
-    const result = await placeExotelCall({ phoneNumber: task.phone_number, taskId });
+    const result = await placeOutboundCall({ phoneNumber: task.phone_number, taskId });
     await repository.updateAttempt(attempt.id, { provider_call_sid: result.sid, status: 'ringing', started_at: new Date().toISOString() });
   } catch (error) {
     await repository.updateAttempt(attempt.id, { status: 'failed', ended_at: new Date().toISOString() });

@@ -4,6 +4,8 @@ import { env } from '../config/env.js';
 
 const demoTasks = new Map();
 const demoAttempts = new Map();
+const demoConversations = new Map();
+const demoTranscripts = new Map();
 
 export const repository = {
   async createTask(input) {
@@ -87,10 +89,43 @@ export const repository = {
     }
     return demoAttempts.get(taskId) ?? [];
   },
+  async createConversation({ taskId, attemptId, language }) {
+    const input = { task_id: taskId, attempt_id: attemptId || null, language: language || 'en' };
+    if (env.DATA_MODE === 'supabase') {
+      const { data, error } = await supabase.from('conversations').insert(input).select().single();
+      if (error) throw error;
+      return data;
+    }
+    const row = { id: randomUUID(), ...input, started_at: new Date().toISOString() };
+    demoConversations.set(row.id, row);
+    demoTranscripts.set(row.id, []);
+    return row;
+  },
+  async getLatestConversation(taskId) {
+    if (env.DATA_MODE === 'supabase') {
+      const { data, error } = await supabase.from('conversations').select('*').eq('task_id', taskId).order('started_at', { ascending: false }).limit(1).maybeSingle();
+      if (error) throw error;
+      return data;
+    }
+    const list = [...demoConversations.values()].filter(c => c.task_id === taskId).sort((a, b) => b.started_at.localeCompare(a.started_at));
+    return list[0] ?? null;
+  },
+  async listTranscripts(conversationId) {
+    if (env.DATA_MODE === 'supabase') {
+      const { data, error } = await supabase.from('transcripts').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    }
+    return demoTranscripts.get(conversationId) ?? [];
+  },
   async saveTranscript(conversationId, speaker, message) {
     if (env.DATA_MODE === 'supabase') {
       const { error } = await supabase.from('transcripts').insert({ conversation_id: conversationId, speaker, message });
       if (error) throw error;
+      return;
     }
+    const list = demoTranscripts.get(conversationId) || [];
+    list.push({ id: randomUUID(), conversation_id: conversationId, speaker, message, created_at: new Date().toISOString() });
+    demoTranscripts.set(conversationId, list);
   }
 };

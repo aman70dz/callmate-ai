@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { repository } from '../services/repository.js';
 import { callQueue } from '../queues/callQueue.js';
 import { env, liveCallsEnabled } from '../config/env.js';
+import { placeOutboundCall } from '../services/telephonyService.js';
 
 const createSchema = z.object({
   contactName: z.string().trim().min(1).max(100),
@@ -86,6 +87,54 @@ export async function completeCallTask(req, res, next) {
       attempts_made: Math.max(1, task.attempts_made || 1)
     });
     res.json({ task: updated });
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function dialCallTask(req, res, next) {
+  try {
+    const task = await repository.getTask(req.params.id);
+    if (!task || task.user_id !== req.user.id) {
+      return res.status(404).json({ error: 'Task not found.' });
+    }
+    if (task.status === 'cancelled') {
+      return res.status(400).json({ error: 'Cannot dial a cancelled task.' });
+    }
+    if (!liveCallsEnabled) {
+      return res.status(400).json({
+        error: 'Live calling is currently disabled (ENABLE_LIVE_CALLS=false in .env). Set ENABLE_LIVE_CALLS=true to place real phone calls.',
+        hint: 'Verify TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, and APP_BASE_URL in .env'
+      });
+    }
+
+    const nextAttemptNum = (task.attempts_made || 0) + 1;
+    const attempt = await repository.createAttempt(task.id, nextAttemptNum);
+    await repository.updateTask(task.id, {
+      status: 'calling',
+      attempts_made: nextAttemptNum
+    });
+
+    try {
+      const result = await placeOutboundCall({
+        phoneNumber: task.phone_number,
+        taskId: task.id
+      });
+      await repository.updateAttempt(attempt.id, {
+        provider_call_sid: result.sid,
+        status: 'ringing',
+        started_at: new Date().toISOString()
+      });
+      const updatedTask = await repository.getTask(task.id);
+      res.json({ success: true, sid: result.sid, task: updatedTask });
+    } catch (dialErr) {
+      await repository.updateAttempt(attempt.id, {
+        status: 'failed',
+        ended_at: new Date().toISOString()
+      });
+      await repository.updateTask(task.id, { status: 'failed' });
+      throw dialErr;
+    }
   } catch (e) {
     next(e);
   }

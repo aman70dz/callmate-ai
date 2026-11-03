@@ -57,6 +57,14 @@ const schema = z.object({
     // Redis
     REDIS_URL: z.string().optional(),
 
+    // Telephony provider
+    TELEPHONY_PROVIDER: z.enum(['exotel', 'twilio']).default('twilio'),
+
+    // Twilio
+    TWILIO_ACCOUNT_SID: z.string().optional(),
+    TWILIO_AUTH_TOKEN: z.string().optional(),
+    TWILIO_PHONE_NUMBER: z.string().optional(),
+
     // Live calling kill switch
     ENABLE_LIVE_CALLS: z.string().default('false')
 });

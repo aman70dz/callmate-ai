@@ -11,7 +11,7 @@ async function run() {
   // Wait 1.5s for port to bind
   await new Promise(r => setTimeout(r, 1500));
 
-  const baseUrl = `http://localhost:${env.PORT}`;
+  const baseUrl = `http://127.0.0.1:${env.PORT}`;
   console.log(`Testing server at ${baseUrl}...`);
 
   // 1. TEST 1 & 2: GET /health

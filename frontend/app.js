@@ -84,9 +84,10 @@ async function refresh() {
         <div class="task-actions">
           <span class="task-date">${new Date(t.created_at).toLocaleString()}</span>
           <div class="task-actions-right">
-            ${['pending', 'retry_scheduled'].includes(t.status) ? `
-              <button class="simulate-btn" data-simulate="${escapeHtml(t.id)}">📞 Simulate call</button>
-              <button class="cancel-btn" data-cancel="${escapeHtml(t.id)}">Cancel task</button>
+            ${['pending', 'retry_scheduled', 'no_answer', 'failed'].includes(t.status) ? `
+              <button class="dial-btn" data-dial="${escapeHtml(t.id)}">📱 Call Phone</button>
+              <button class="simulate-btn" data-simulate="${escapeHtml(t.id)}">💬 Simulate</button>
+              <button class="cancel-btn" data-cancel="${escapeHtml(t.id)}">Cancel</button>
             ` : ''}
           </div>
         </div>
@@ -342,6 +343,28 @@ form.addEventListener('submit', async e => {
 });
 
 taskList.addEventListener('click', async e => {
+  const dialId = e.target.dataset.dial;
+  if (dialId) {
+    const task = loadedTasks.find(t => t.id === dialId);
+    const targetName = task ? `${task.contact_name} (${task.phone_number})` : 'recipient';
+    if (!confirm(`Place live phone call now to ${targetName}?`)) return;
+    const btn = e.target;
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Calling…';
+    try {
+      const res = await request(`/api/calls/${dialId}/dial`, { method: 'POST' });
+      alert(`Call initiated! Twilio Call SID: ${res.sid}\nYour phone will ring in a few seconds.`);
+      await refresh();
+    } catch (err) {
+      alert(`Could not place call: ${err.message}`);
+      btn.disabled = false;
+      btn.textContent = origText;
+      await refresh();
+    }
+    return;
+  }
+
   const cancelId = e.target.dataset.cancel;
   if (cancelId) {
     if (!confirm('Cancel this pending task?')) return;
